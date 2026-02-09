@@ -38,6 +38,17 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
               Works
             </button>
             <button 
+              onClick={() => {
+                onNavigate(ViewMode.HOME);
+                setTimeout(() => {
+                  document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }} 
+              className="text-[10px] font-black tracking-widest uppercase text-gray-300 hover:text-black transition-all"
+            >
+              Contact
+            </button>
+            <button 
               onClick={() => onNavigate(ViewMode.ADMIN)} 
               className={`text-[10px] font-black tracking-widest uppercase transition-all ${currentView === ViewMode.ADMIN ? 'text-black' : 'text-gray-300 hover:text-black'}`}
             >
