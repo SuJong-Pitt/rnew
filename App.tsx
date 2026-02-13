@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ViewMode, Project } from './types';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -7,12 +6,13 @@ import Features from './components/Features';
 import PortfolioView from './components/PortfolioView';
 import AdminPanel from './components/AdminPanel';
 import ProjectDetail from './components/ProjectDetail';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-// Supabase 클라이언트 초기화
-const supabaseUrl = 'https://bmqbexyvadscdxvzoifp.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtcWJleHl2YWRzY2R4dnpvaWZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNDIzMjEsImV4cCI6MjA4NTYxODMyMX0.GSzavJ-VCmpmHHBT3lyXLzSe6K8qr7ggBq-a66vGtzY';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// 모듈 평가 시점에 즉시 실행되는 환경 변수 안전 접근 함수
+const getEnv = (key: string): string => {
+  const env = (import.meta as any).env || (window as any).process?.env || (window as any).importMetaEnv || {};
+  return env[key] || '';
+};
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewMode>(ViewMode.HOME);
@@ -27,10 +27,20 @@ const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Supabase 클라이언트 메모이제이션 (URL/Key가 유효할 때만 생성)
+  const supabase = useMemo(() => {
+    const url = getEnv('VITE_SUPABASE_URL');
+    const key = getEnv('VITE_SUPABASE_ANON_KEY');
+    if (!url || !key) return null;
+    return createClient(url, key);
+  }, []);
+
   // 카카오톡 링크
-  const KAKAO_CHAT_URL = "https://pf.kakao.com/_xxxx";
+  const KAKAO_CHAT_URL = getEnv('VITE_KAKAO_CHAT_URL');
 
   useEffect(() => {
+    if (!supabase) return;
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAdminAuthenticated(!!session);
     });
@@ -38,9 +48,13 @@ const App: React.FC = () => {
       setIsAdminAuthenticated(!!session);
     });
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   const fetchProjects = async () => {
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -65,10 +79,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [supabase]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) return;
     setIsAuthLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -86,6 +101,7 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
+    if (!supabase) return;
     await supabase.auth.signOut();
     setCurrentView(ViewMode.HOME);
   };
@@ -103,7 +119,9 @@ const App: React.FC = () => {
     <div className="animate-in fade-in duration-1000">
       <Hero />
       <Features />
-      {isLoading ? (
+      {!supabase ? (
+        <div className="py-20 text-center text-[10px] font-bold tracking-widest text-red-400 uppercase">Configuration Missing (Supabase)</div>
+      ) : isLoading ? (
         <div className="py-20 text-center text-[10px] font-bold tracking-widest text-gray-400 uppercase">Loading Projects...</div>
       ) : (
         <PortfolioView projects={projects} onProjectClick={(p) => {
@@ -137,7 +155,7 @@ const App: React.FC = () => {
             Average Response Time: Within 2 Hours
           </p>
           <a 
-            href={KAKAO_CHAT_URL} 
+            href={KAKAO_CHAT_URL || '#'} 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-block bg-black text-white px-12 py-6 text-[11px] font-black tracking-[0.4em] uppercase hover:bg-gray-800 transition-all shadow-2xl hover:-translate-y-1 active:translate-y-0"
@@ -151,7 +169,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white selection:bg-black selection:text-white flex flex-col relative overflow-x-hidden">
-      {/* Background Geometric Pattern Layer */}
       <div 
         className="fixed inset-0 z-0 pointer-events-none opacity-40 mix-blend-multiply transition-opacity duration-1000"
         style={{
@@ -161,7 +178,6 @@ const App: React.FC = () => {
           backgroundAttachment: 'fixed'
         }}
       />
-      {/* Subtle White Overlay for Content Readability */}
       <div className="fixed inset-0 z-[1] pointer-events-none bg-white/60" />
 
       <Navbar currentView={currentView} onNavigate={handleNavigate} />
@@ -211,10 +227,10 @@ const App: React.FC = () => {
                   </div>
                 </div>
                 <button 
-                  disabled={isAuthLoading}
+                  disabled={isAuthLoading || !supabase}
                   className="w-full bg-black text-white py-5 text-[10px] font-black tracking-[0.3em] uppercase hover:bg-gray-800 transition-all shadow-lg active:scale-[0.98]"
                 >
-                  {isAuthLoading ? 'Authenticating...' : 'Sign In To Console'}
+                  {!supabase ? 'Config Error' : isAuthLoading ? 'Authenticating...' : 'Sign In To Console'}
                 </button>
               </form>
             </div>
@@ -222,9 +238,8 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Floating KakaoTalk Button */}
       <a 
-        href={KAKAO_CHAT_URL}
+        href={KAKAO_CHAT_URL || '#'}
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-8 left-8 z-[100] flex items-center gap-3 bg-black text-white p-4 md:px-6 md:py-4 rounded-full shadow-2xl hover:scale-105 transition-all duration-300 group overflow-hidden border border-white/10"
@@ -238,7 +253,6 @@ const App: React.FC = () => {
         </span>
       </a>
 
-      {/* Admin Button */}
       <button 
         onClick={() => handleNavigate(ViewMode.ADMIN)}
         className="fixed bottom-8 right-8 z-[100] p-4 text-[10px] font-black tracking-widest uppercase text-gray-300 hover:text-black transition-all opacity-30 hover:opacity-100"

@@ -1,11 +1,12 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Project } from '../types';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-const supabaseUrl = 'https://bmqbexyvadscdxvzoifp.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtcWJleHl2YWRzY2R4dnpvaWZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNDIzMjEsImV4cCI6MjA4NTYxODMyMX0.GSzavJ-VCmpmHHBT3lyXLzSe6K8qr7ggBq-a66vGtzY';
-const supabase = createClient(supabaseUrl, supabaseKey);
+// 안전한 환경 변수 접근 로직
+const getEnv = (key: string): string => {
+  const env = (import.meta as any).env || (window as any).process?.env || (window as any).importMetaEnv || {};
+  return env[key] || '';
+};
 
 interface AdminPanelProps {
   projects: Project[];
@@ -20,6 +21,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ projects, onBack, onRefresh, on
   const [preview, setPreview] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
 
+  // Supabase 클라이언트 메모이제이션
+  const supabase = useMemo(() => {
+    const url = getEnv('VITE_SUPABASE_URL');
+    const key = getEnv('VITE_SUPABASE_ANON_KEY');
+    if (!url || !key) return null;
+    return createClient(url, key);
+  }, []);
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
@@ -32,6 +41,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ projects, onBack, onRefresh, on
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) {
+      alert('환경 설정 오류: Supabase 설정을 확인해주세요.');
+      return;
+    }
     if (!title || !file) {
       alert('제목과 이미지를 모두 선택해주세요.');
       return;
@@ -74,30 +87,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ projects, onBack, onRefresh, on
   };
 
   const handleDelete = async (id: string) => {
+    if (!supabase) return;
     if (!confirm('정말 삭제하시겠습니까? 데이터와 이미지가 모두 삭제됩니다.')) return;
     
-    // 삭제할 프로젝트 찾기 (이미지 경로 추출용)
     const targetProject = projects.find(p => p.id === id);
     if (!targetProject) return;
 
     try {
-      // 1. 데이터베이스 레코드 삭제
       const { error: dbError } = await supabase.from('projects').delete().eq('id', id);
       if (dbError) throw dbError;
 
-      // 2. Storage 파일 삭제 시도
-      // 공개 URL에서 파일 경로(project-images/파일명) 부분만 추출
-      // 형식: .../storage/v1/object/public/portfolio/project-images/filename.jpg
       const urlParts = targetProject.imageUrl.split('/portfolio/');
       if (urlParts.length > 1) {
         const filePath = urlParts[1];
-        const { error: storageError } = await supabase.storage
+        await supabase.storage
           .from('portfolio')
           .remove([filePath]);
-        
-        if (storageError) {
-          console.warn('DB는 삭제되었으나 Storage 파일 삭제에 실패했습니다:', storageError.message);
-        }
       }
 
       onRefresh();
@@ -118,6 +123,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ projects, onBack, onRefresh, on
           Logout Session
         </button>
       </div>
+
+      {!supabase && (
+        <div className="mb-10 p-6 bg-red-50 border border-red-100 rounded-xl">
+          <p className="text-xs font-bold text-red-500 uppercase tracking-widest">⚠️ Configuration Required: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are missing.</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-20">
         <section>
@@ -152,10 +163,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ projects, onBack, onRefresh, on
             </div>
 
             <button 
-              disabled={isUploading}
-              className={`w-full py-5 text-[10px] font-black tracking-[0.3em] uppercase transition-all ${isUploading ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800 shadow-lg'}`}
+              disabled={isUploading || !supabase}
+              className={`w-full py-5 text-[10px] font-black tracking-[0.3em] uppercase transition-all ${isUploading || !supabase ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800 shadow-lg'}`}
             >
-              {isUploading ? 'Processing...' : 'Register Project'}
+              {!supabase ? 'Config Missing' : isUploading ? 'Processing...' : 'Register Project'}
             </button>
           </form>
         </section>
@@ -167,7 +178,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ projects, onBack, onRefresh, on
           <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
             {projects.length === 0 ? (
               <div className="py-20 text-center border border-dashed border-gray-100">
-                <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest">No projects found</p>
+                <p className="text-[9px] text-gray-300 font-bold uppercase tracking-widest">{!supabase ? 'Connection error' : 'No projects found'}</p>
               </div>
             ) : (
               projects.map((p) => (
