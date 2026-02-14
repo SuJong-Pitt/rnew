@@ -2,10 +2,15 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Fix for __dirname in ESM environment: derive it from import.meta.url
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
-    // .env 파일을 로드합니다.
-    const env = loadEnv(mode, process.cwd(), ''); 
+    // Load environment variables. 
+    // Use __dirname instead of process.cwd() to resolve the TypeScript 'process' type error.
+    const env = loadEnv(mode, __dirname, ''); 
     
     return {
       server: {

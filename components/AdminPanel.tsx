@@ -4,8 +4,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 // 안전한 환경 변수 접근 로직
 const getEnv = (key: string): string => {
-  const env = (import.meta as any).env || (window as any).process?.env || (window as any).importMetaEnv || {};
-  return env[key] || '';
+  const env = (import.meta as any).env || {};
+  const processEnv = (window as any).process?.env || (globalThis as any).process?.env || {};
+  const windowEnv = (window as any).importMetaEnv || {};
+  
+  return env[key] || processEnv[key] || windowEnv[key] || '';
 };
 
 interface AdminPanelProps {

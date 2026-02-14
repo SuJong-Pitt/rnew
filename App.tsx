@@ -6,12 +6,15 @@ import Features from './components/Features';
 import PortfolioView from './components/PortfolioView';
 import AdminPanel from './components/AdminPanel';
 import ProjectDetail from './components/ProjectDetail';
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
-// 모듈 평가 시점에 즉시 실행되는 환경 변수 안전 접근 함수
+// 다양한 환경(Vite, Node, Browser)에서 환경 변수를 안전하게 가져오는 함수
 const getEnv = (key: string): string => {
-  const env = (import.meta as any).env || (window as any).process?.env || (window as any).importMetaEnv || {};
-  return env[key] || '';
+  const env = (import.meta as any).env || {};
+  const processEnv = (window as any).process?.env || (globalThis as any).process?.env || {};
+  const windowEnv = (window as any).importMetaEnv || {};
+  
+  return env[key] || processEnv[key] || windowEnv[key] || '';
 };
 
 const App: React.FC = () => {
@@ -27,15 +30,24 @@ const App: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Supabase 클라이언트 메모이제이션 (URL/Key가 유효할 때만 생성)
+  // Supabase 클라이언트 메모이제이션
   const supabase = useMemo(() => {
     const url = getEnv('VITE_SUPABASE_URL');
     const key = getEnv('VITE_SUPABASE_ANON_KEY');
-    if (!url || !key) return null;
-    return createClient(url, key);
+    
+    if (!url || !key) {
+      console.warn('Supabase configuration is missing. Check your .env file or environment variables.');
+      return null;
+    }
+    
+    try {
+      return createClient(url, key);
+    } catch (e) {
+      console.error('Failed to initialize Supabase client:', e);
+      return null;
+    }
   }, []);
 
-  // 카카오톡 링크
   const KAKAO_CHAT_URL = getEnv('VITE_KAKAO_CHAT_URL');
 
   useEffect(() => {
@@ -119,8 +131,20 @@ const App: React.FC = () => {
     <div className="animate-in fade-in duration-1000">
       <Hero />
       <Features />
+      
       {!supabase ? (
-        <div className="py-20 text-center text-[10px] font-bold tracking-widest text-red-400 uppercase">Configuration Missing (Supabase)</div>
+        <div className="py-40 px-6 max-w-5xl mx-auto text-center bg-red-50/30 rounded-3xl border border-red-100/50 mb-20">
+          <div className="mb-6 flex justify-center">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+              <span className="text-red-500 font-black text-xl">!</span>
+            </div>
+          </div>
+          <h2 className="text-xs font-black tracking-[0.4em] uppercase text-red-500 mb-4">Configuration Required</h2>
+          <p className="text-[10px] leading-relaxed text-gray-500 font-medium uppercase tracking-widest max-w-xs mx-auto">
+            Supabase 환경 변수가 설정되지 않았습니다.<br/>
+            관리자에게 문의하거나 설정 파일을 확인하세요.
+          </p>
+        </div>
       ) : isLoading ? (
         <div className="py-20 text-center text-[10px] font-bold tracking-widest text-gray-400 uppercase">Loading Projects...</div>
       ) : (
@@ -264,11 +288,7 @@ const App: React.FC = () => {
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="text-center md:text-left">
             <h4 className="text-xs font-black tracking-widest mb-4 uppercase text-black">R:new Design Studio</h4>
-            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">© 2024 R:new Studio. All rights reserved.</p>
-          </div>
-          <div className="flex gap-8">
-            <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest cursor-default">Privacy Policy</span>
-            <span className="text-[9px] font-bold text-gray-300 uppercase tracking-widest cursor-default">Terms of Service</span>
+            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">© 2026 R:new Studio. All rights reserved.</p>
           </div>
         </div>
       </footer>
