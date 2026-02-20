@@ -9,6 +9,7 @@ export interface Project {
 
 export enum ViewMode {
   HOME = 'HOME',
+  ABOUT = 'ABOUT',
   ADMIN = 'ADMIN',
   DETAIL = 'DETAIL'
 }

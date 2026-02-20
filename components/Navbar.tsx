@@ -26,6 +26,12 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             Overview
           </button>
           <button
+            onClick={() => onNavigate(ViewMode.ABOUT)}
+            className={`text-[11px] md:text-xs font-medium transition-all ${currentView === ViewMode.ABOUT ? 'text-[#1d1d1f]' : 'text-[#86868b] hover:text-[#1d1d1f]'}`}
+          >
+            Studio
+          </button>
+          <button
             onClick={() => {
               onNavigate(ViewMode.HOME);
               setTimeout(() => {

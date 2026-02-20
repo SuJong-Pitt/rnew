@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { ViewMode, Project } from './types';
 import Navbar from './components/Navbar';
@@ -9,7 +10,8 @@ import CTASection from './components/CTASection';
 import PortfolioView from './components/PortfolioView';
 import AdminPanel from './components/AdminPanel';
 import ProjectDetail from './components/ProjectDetail';
-import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
+import AboutView from './components/AboutView';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 // 다양한 환경(Vite, Node, Browser)에서 환경 변수를 안전하게 가져오는 함수
 const getEnv = (key: string): string => {
@@ -123,9 +125,9 @@ const App: React.FC = () => {
 
   const handleNavigate = (view: ViewMode) => {
     setCurrentView(view);
-    if (view === ViewMode.HOME) {
+    if (view === ViewMode.HOME || view === ViewMode.ABOUT) {
       setSelectedProject(null);
-      fetchProjects();
+      if (view === ViewMode.HOME) fetchProjects();
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -190,6 +192,7 @@ const App: React.FC = () => {
 
       <main className="flex-grow relative z-10">
         {(currentView === ViewMode.HOME) && renderLandingPage()}
+        {currentView === ViewMode.ABOUT && <AboutView />}
         {currentView === ViewMode.DETAIL && selectedProject && (
           <ProjectDetail project={selectedProject} onBack={() => handleNavigate(ViewMode.HOME)} />
         )}
