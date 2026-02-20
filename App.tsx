@@ -2,7 +2,10 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ViewMode, Project } from './types';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import LogicSection from './components/LogicSection';
+import TrustSection from './components/TrustSection';
 import Features from './components/Features';
+import CTASection from './components/CTASection';
 import PortfolioView from './components/PortfolioView';
 import AdminPanel from './components/AdminPanel';
 import ProjectDetail from './components/ProjectDetail';
@@ -13,7 +16,7 @@ const getEnv = (key: string): string => {
   const env = (import.meta as any).env || {};
   const processEnv = (window as any).process?.env || (globalThis as any).process?.env || {};
   const windowEnv = (window as any).importMetaEnv || {};
-  
+
   return env[key] || processEnv[key] || windowEnv[key] || '';
 };
 
@@ -21,12 +24,12 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewMode>(ViewMode.HOME);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  
+
   // 로그인 폼 상태
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [isAuthLoading, setIsAuthLoading] = useState(false);
-  
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,12 +37,12 @@ const App: React.FC = () => {
   const supabase = useMemo(() => {
     const url = getEnv('VITE_SUPABASE_URL');
     const key = getEnv('VITE_SUPABASE_ANON_KEY');
-    
+
     if (!url || !key) {
       console.warn('Supabase configuration is missing. Check your .env file or environment variables.');
       return null;
     }
-    
+
     try {
       return createClient(url, key);
     } catch (e) {
@@ -52,7 +55,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!supabase) return;
-    
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAdminAuthenticated(!!session);
     });
@@ -130,82 +133,61 @@ const App: React.FC = () => {
   const renderLandingPage = () => (
     <div className="animate-in fade-in duration-1000">
       <Hero />
-      <Features />
-      
-      {!supabase ? (
-        <div className="py-40 px-6 max-w-5xl mx-auto text-center bg-red-50/30 rounded-3xl border border-red-100/50 mb-20">
-          <div className="mb-6 flex justify-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-              <span className="text-red-500 font-black text-xl">!</span>
-            </div>
-          </div>
-          <h2 className="text-xs font-black tracking-[0.4em] uppercase text-red-500 mb-4">Configuration Required</h2>
-          <p className="text-[10px] leading-relaxed text-gray-500 font-medium uppercase tracking-widest max-w-xs mx-auto">
-            Supabase 환경 변수가 설정되지 않았습니다.<br/>
-            관리자에게 문의하거나 설정 파일을 확인하세요.
-          </p>
-        </div>
-      ) : isLoading ? (
-        <div className="py-20 text-center text-[10px] font-bold tracking-widest text-gray-400 uppercase">Loading Projects...</div>
-      ) : (
-        <PortfolioView projects={projects} onProjectClick={(p) => {
-          setSelectedProject(p);
-          setCurrentView(ViewMode.DETAIL);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }} />
-      )}
-      
-      <section id="about" className="py-20 px-6 max-w-5xl mx-auto border-t border-gray-100 mt-20 relative z-10 bg-white/40 backdrop-blur-[2px] rounded-3xl">
-        <h2 className="section-title">The Philosophy</h2>
-        <div className="flex flex-col md:flex-row items-center gap-16">
-          <div className="w-56 h-56 rounded-full bg-[#f8f8f8] flex-shrink-0 overflow-hidden grayscale border border-gray-100 shadow-xl">
-            <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?w=400&q=80" alt="About" className="w-full h-full object-cover" />
-          </div>
-          <div className="space-y-6">
-            <p className="text-[11px] leading-loose text-gray-800 font-medium break-keep">
-              R:new Design Studio는 단순한 미적 완성도를 넘어, 비즈니스의 실질적인 지표인 '매출'에 집중합니다. 우리는 시각적 아름다움 뒤에 숨겨진 인간 심리와 데이터에 기반하여 고객이 거부감 없이 구매 버튼까지 도달하도록 유도하는 최적화된 상세페이지와 UI/UX를 설계합니다.
+      <LogicSection />
+      <TrustSection />
+
+      <section id="portfolio-section" className="py-20">
+        {!supabase ? (
+          <div className="py-40 px-6 max-w-5xl mx-auto text-center bg-[#f5f5f7] rounded-3xl border border-gray-100/50 mb-20 animate-fade-up">
+            <h2 className="text-xs font-bold tracking-[0.4em] uppercase text-gray-400 mb-4">Portfolio Offline</h2>
+            <p className="text-[13px] leading-relaxed text-gray-500 font-medium max-w-xs mx-auto">
+              Supabase 설정이 필요합니다.<br />
+              현재는 로컬 미리보기 모드입니다.
             </p>
+          </div>
+        ) : isLoading ? (
+          <div className="py-20 text-center text-xs font-medium tracking-widest text-[#86868b] uppercase">Loading Masterpieces...</div>
+        ) : (
+          <PortfolioView projects={projects} onProjectClick={(p) => {
+            setSelectedProject(p);
+            setCurrentView(ViewMode.DETAIL);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }} />
+        )}
+      </section>
+
+      <Features />
+
+      <section id="about" className="py-32 bg-white">
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="flex flex-col md:flex-row items-center gap-20">
+            <div className="w-64 h-64 rounded-3xl bg-[#f5f5f7] flex-shrink-0 overflow-hidden shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-700">
+              <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?w=600&q=80" alt="About" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-3xl font-bold mb-8 text-[#1d1d1f]">The Philosophy</h2>
+              <p className="text-lg leading-relaxed text-[#86868b] font-medium break-keep mb-8">
+                R:new Design Studio는 단순한 미적 완성도를 넘어, 비즈니스의 실질적인 지표인 '매출'에 집중합니다.
+                우리는 시각적 아름다움 뒤에 숨겨진 인간 심리와 데이터에 기반하여 고객이 거부감 없이
+                구매 버튼까지 도달하도록 유도하는 최적화된 상세페이지와 UI/UX를 설계합니다.
+              </p>
+              <div className="h-px w-20 bg-[#1d1d1f]"></div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section id="contact-section" className="py-40 px-6 max-w-5xl mx-auto border-t border-gray-100 mt-20 text-center relative z-10 bg-white/40 backdrop-blur-[2px] rounded-3xl">
-        <h2 className="text-[10px] font-black tracking-[0.6em] uppercase text-gray-300 mb-8">Start a Project</h2>
-        <div className="space-y-12">
-          <h3 className="text-3xl md:text-4xl font-black tracking-tight leading-tight uppercase text-black">
-            가치를 더하는 디자인,<br />지금 바로 상담해보세요.
-          </h3>
-          <p className="text-[11px] leading-relaxed text-gray-500 font-medium uppercase tracking-widest">
-            Average Response Time: Within 2 Hours
-          </p>
-          <a 
-            href={KAKAO_CHAT_URL || '#'} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-block bg-black text-white px-12 py-6 text-[11px] font-black tracking-[0.4em] uppercase hover:bg-gray-800 transition-all shadow-2xl hover:-translate-y-1 active:translate-y-0"
-          >
-            Inquiry via KakaoTalk
-          </a>
-        </div>
-      </section>
+      <div id="contact-section">
+        <CTASection kakaoUrl={KAKAO_CHAT_URL} />
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-white selection:bg-black selection:text-white flex flex-col relative overflow-x-hidden">
-      <div 
-        className="fixed inset-0 z-0 pointer-events-none opacity-40 mix-blend-multiply transition-opacity duration-1000"
-        style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed'
-        }}
-      />
-      <div className="fixed inset-0 z-[1] pointer-events-none bg-white/60" />
+    <div className="min-h-screen bg-white selection:bg-[#0066cc] selection:text-white flex flex-col relative overflow-x-hidden">
 
       <Navbar currentView={currentView} onNavigate={handleNavigate} />
-      
+
       <main className="flex-grow relative z-10">
         {(currentView === ViewMode.HOME) && renderLandingPage()}
         {currentView === ViewMode.DETAIL && selectedProject && (
@@ -213,8 +195,8 @@ const App: React.FC = () => {
         )}
         {currentView === ViewMode.ADMIN && (
           isAdminAuthenticated ? (
-            <AdminPanel 
-              projects={projects} 
+            <AdminPanel
+              projects={projects}
               onBack={() => handleNavigate(ViewMode.HOME)}
               onRefresh={fetchProjects}
               onLogout={handleLogout}
@@ -250,7 +232,7 @@ const App: React.FC = () => {
                     />
                   </div>
                 </div>
-                <button 
+                <button
                   disabled={isAuthLoading || !supabase}
                   className="w-full bg-black text-white py-5 text-[10px] font-black tracking-[0.3em] uppercase hover:bg-gray-800 transition-all shadow-lg active:scale-[0.98]"
                 >
@@ -262,7 +244,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <a 
+      <a
         href={KAKAO_CHAT_URL || '#'}
         target="_blank"
         rel="noopener noreferrer"
@@ -270,14 +252,14 @@ const App: React.FC = () => {
       >
         <div className="absolute inset-0 bg-[#FEE500] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out" />
         <svg className="w-5 h-5 relative z-10 text-white group-hover:text-[#3C1E1E] transition-colors" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.34 6.1l-.85 3.12c-.1.38.35.7.68.48l3.64-2.4c.4.04.81.06 1.22.06 4.97 0 9-3.186 9-7.115S16.97 3 12 3z"/>
+          <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.34 6.1l-.85 3.12c-.1.38.35.7.68.48l3.64-2.4c.4.04.81.06 1.22.06 4.97 0 9-3.186 9-7.115S16.97 3 12 3z" />
         </svg>
         <span className="text-[10px] font-black tracking-widest uppercase relative z-10 group-hover:text-[#3C1E1E] transition-colors hidden md:block">
           Kakao Inquiry
         </span>
       </a>
 
-      <button 
+      <button
         onClick={() => handleNavigate(ViewMode.ADMIN)}
         className="fixed bottom-8 right-8 z-[100] p-4 text-[10px] font-black tracking-widest uppercase text-gray-300 hover:text-black transition-all opacity-30 hover:opacity-100"
       >

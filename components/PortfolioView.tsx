@@ -9,52 +9,53 @@ interface PortfolioViewProps {
 
 const PortfolioView: React.FC<PortfolioViewProps> = ({ projects, onProjectClick }) => {
   return (
-    <section id="works-section" className="pt-20 pb-20 px-6 max-w-5xl mx-auto border-t border-gray-50 mt-20">
-      <div className="mb-20 text-center md:text-left animate-in fade-in slide-in-from-left-4 duration-1000">
-        <h1 className="text-xs font-black tracking-[0.6em] uppercase text-gray-300 mb-4">Portfolio</h1>
-        <p className="text-xl font-medium tracking-tight break-keep text-gray-800">
-          R:NEW STUDIO가 제안하는<br />프리미엄 비주얼 스토리텔링.
-        </p>
-      </div>
-      
-      {projects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-x-12 gap-y-20 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-          {projects.map((project) => (
-            <div 
-              key={project.id} 
-              className="group cursor-pointer"
-              onClick={() => onProjectClick(project)}
-            >
-              <div className="aspect-[16/10] bg-[#fcfcfc] overflow-hidden mb-6 relative border border-gray-100 shadow-sm group-hover:shadow-xl transition-all duration-700">
-                <img 
-                  src={project.imageUrl} 
-                  alt={project.title} 
-                  className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000 ease-in-out"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-700" />
-              </div>
-              <div className="flex justify-between items-start border-b border-gray-50 pb-4 px-1">
-                <div>
-                  <h3 className="text-xs font-black uppercase tracking-widest mb-1">{project.title}</h3>
-                  <p className="text-[9px] text-gray-400 font-bold tracking-[0.1em] uppercase">Visual Experience Design</p>
+    <section id="works-section" className="py-32 px-6 bg-white overflow-hidden">
+      <div className="container mx-auto max-w-6xl">
+        <div className="mb-24 text-center animate-fade-up">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-[#1d1d1f] mb-6">Masterpieces</h2>
+          <p className="text-xl text-[#86868b] font-medium max-w-2xl mx-auto italic">
+            "시각적 완성도를 넘어, 숫자로 가치를 증명하는 포트폴리오"
+          </p>
+        </div>
+
+        {projects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-24">
+            {projects.map((project, idx) => (
+              <div
+                key={project.id}
+                className="group cursor-pointer animate-fade-up"
+                style={{ animationDelay: `${idx * 0.1}s` }}
+                onClick={() => onProjectClick(project)}
+              >
+                <div className="relative aspect-[16/10] bg-[#f5f5f7] rounded-[2rem] overflow-hidden mb-8 shadow-sm group-hover:shadow-2xl transition-all duration-700 ease-out border border-gray-100/50">
+                  <img
+                    src={project.imageUrl}
+                    alt={project.title}
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-1000 ease-in-out"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-700" />
                 </div>
-                <span className="text-[10px] text-gray-200 group-hover:text-black transition-colors font-bold uppercase tracking-widest">Details →</span>
+                <div className="flex justify-between items-end border-b border-gray-100 pb-6 px-4">
+                  <div>
+                    <h3 className="text-2xl font-bold text-[#1d1d1f] mb-2 tracking-tight">{project.title}</h3>
+                    <p className="text-sm font-bold text-[#86868b] uppercase tracking-[0.2em]">Strategy & High-End Design</p>
+                  </div>
+                  <div className="bg-[#f5f5f7] p-4 rounded-full group-hover:bg-[#1d1d1f] transition-colors duration-500">
+                    <svg className="w-5 h-5 text-[#1d1d1f] group-hover:text-white transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* Empty State Design */
-        <div className="py-40 border border-dashed border-gray-100 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-1000">
-          <div className="w-px h-12 bg-gray-200 mb-8"></div>
-          <h2 className="text-[10px] font-black tracking-[0.8em] uppercase text-gray-300 mb-6">Preparing New Inspiration</h2>
-          <div className="space-y-3">
-            <p className="text-[11px] font-medium text-gray-400 tracking-wider">현재 새로운 프로젝트를 큐레이션 중입니다.</p>
-            <p className="text-[9px] font-bold text-gray-300 tracking-[0.2em] uppercase">Coming soon to the archive</p>
+            ))}
           </div>
-          <div className="w-px h-12 bg-gray-200 mt-8"></div>
-        </div>
-      )}
+        ) : (
+          <div className="py-40 bg-[#f5f5f7] rounded-[3rem] border border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
+            <h2 className="text-xl font-bold text-gray-400 mb-4 tracking-tight">Preparing New Masterpieces</h2>
+            <p className="text-sm text-gray-400 uppercase tracking-widest font-bold">Coming Soon</p>
+          </div>
+        )}
+      </div>
     </section>
   );
 };
